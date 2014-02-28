@@ -19,7 +19,7 @@ class FindSelectAction(val d: FirefoxDriver)
   protected val log = Log(classOf[FindSelectAction])
 
   def act = { arg =>
-    val resElementList: Stream[Option[SeSelect]] = inAllWindows { address =>
+    val resElementList: Stream[Option[SeSelect]] = inAllWindowsByBy{ address =>
       tryo {
         val webElement = findElement(arg.method, arg.query)
         parseSelectElement(address)(webElement)

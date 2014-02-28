@@ -18,7 +18,7 @@ class ElementExistsAction(val d: FirefoxDriver)
   protected val log = Log(classOf[ElementExistsAction])
 
   def act = { arg =>
-    val resElementList: Stream[Boolean] = inAllWindows { address =>
+    val resElementList: Stream[Boolean] = inAllWindowsByBy{ address =>
       tryb {
         findElement(arg.method, arg.query)
       }

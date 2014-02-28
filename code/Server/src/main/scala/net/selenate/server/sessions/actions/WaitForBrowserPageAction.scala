@@ -40,7 +40,7 @@ class WaitForBrowserPageAction(val d: FirefoxDriver)
 
   def elementExists(selector: SeElementSelector): Boolean =
     try {
-      val elemOpt = inAllWindows { address =>
+      val elemOpt = inAllWindowsByBy{ address =>
         tryo {
           findElement(selector.method, selector.query)
         }

@@ -18,11 +18,14 @@ import net.selenate.common.user.ElementSelector
 import net.selenate.common.user.ElementSelectMethod
 
 trait ActionCommons {
-  type Window    = String
-  type Frame     = Int
-  type FramePath = IndexedSeq[Frame]
+  type Window      = String
+  type Frame       = Int
+  type FrameBy     = WebElement
+  type FramePath   = IndexedSeq[Frame]
+  type FramePathBy = IndexedSeq[FrameBy]
 
   case class Address(window: Window, framePath: FramePath)
+  case class AddressBy(window: Window, framePath: FramePathBy)
 
 
   val d: FirefoxDriver
@@ -58,16 +61,24 @@ return report;
   }
 
   protected def switchToWindow(window: Window) {
-    log.debug("SWITCHING TO DEFAULT CONTENT")
-    d.switchTo.defaultContent
     log.debug("SWITCHING TO WINDOW "+ window)
     d.switchTo.window(window)
+    log.debug("SWITCHING TO DEFAULT CONTENT")
+    d.switchTo.defaultContent
   }
 
   protected def switchToFrame(window: Window, framePath: FramePath) {
     switchToWindow(window)
     framePath foreach { e =>
       log.debug("SWITCHING TO FRAME "+ e)
+      d.switchTo.frame(e)
+    }
+  }
+
+  protected def switchToFrameBy(window: Window, framePath: FramePathBy) {
+    switchToWindow(window)
+    framePath foreach { e =>
+      log.debug("SWITCHING TO FRAME "+ "(%s, %s)".format(e.getTagName(), e.getAttribute("id")))
       d.switchTo.frame(e)
     }
   }
@@ -155,6 +166,24 @@ return report;
         mapToRealJava(parseAttributeReport(attributeReport)))
   }
 
+  protected def parseWebElement(address: AddressBy)(e: RemoteWebElement): SeElement = {
+    val attributeReport = d.executeScript(JS.getAttributes, e)
+    new SeElement(
+        e.getId,
+        e.getLocation.getX,
+        e.getLocation.getY,
+        e.getSize.getWidth,
+        e.getSize.getHeight,
+        e.getTagName,
+        e.getText,
+        e.isDisplayed,
+        e.isEnabled,
+        e.isSelected,
+        address.window,
+        seqToRealJava(List.empty),
+        mapToRealJava(parseAttributeReport(attributeReport)))
+  }
+
   protected def parseSelectElement(address: Address)(e: RemoteWebElement): SeSelect = {
     val select = new Select(e)
     val rawAllOptionList         = select.getOptions.map(_.asInstanceOf[RemoteWebElement]).toIndexedSeq
@@ -175,7 +204,30 @@ return report;
         seqToRealJava(parsedAllOptionList))
   }
 
+  protected def parseSelectElement(address: AddressBy)(e: RemoteWebElement): SeSelect = {
+    val select = new Select(e)
+    val rawAllOptionList         = select.getOptions.map(_.asInstanceOf[RemoteWebElement]).toIndexedSeq
+    val rawSelectedOptionList    = select.getAllSelectedOptions.map(_.asInstanceOf[RemoteWebElement]).toIndexedSeq
+    val selectedIndexList        = rawAllOptionList.zipWithIndex.collect { case(o, i) if rawSelectedOptionList.contains(o) => i }
+
+    val parsedAllOptionList      = rawAllOptionList map parseOptionElement(address)
+    val parsedSelectedOptionList = rawSelectedOptionList map parseOptionElement(address)
+
+    val firstSelectedIndex       = selectedIndexList.headOption
+    val firstSelectedOption      = parsedSelectedOptionList.headOption
+
+    new SeSelect(
+        parseWebElement(address)(e),
+        parsedAllOptionList.size,
+        firstSelectedIndex map toInteger orNull,
+        firstSelectedOption.orNull,
+        seqToRealJava(parsedAllOptionList))
+  }
+
   protected def parseOptionElement(address: Address)(e: RemoteWebElement): SeOption = {
+    new SeOption(parseWebElement(address)(e))
+  }
+  protected def parseOptionElement(address: AddressBy)(e: RemoteWebElement): SeOption = {
     new SeOption(parseWebElement(address)(e))
   }
 
@@ -206,6 +258,11 @@ return report;
     windowList flatMap inAllFrames(address)
   }
 
+  protected def inAllWindowsByBy[T](address: AddressBy => T): Stream[T] = {
+    val windowList: Stream[Window] = d.getWindowHandles().toStream
+    windowList flatMap inAllFramesByBy(address)
+  }
+
 
   protected def inAllFrames[T](address: Address => T)(window: Window): Stream[T] = {
     def findAllFrames: FramePath = {
@@ -228,6 +285,27 @@ return report;
     inAllFramesDoit(window, Vector(), None)
   }
 
+
+  protected def inAllFramesByBy[T](address: AddressBy => T)(window: Window): Stream[T] = {
+    def findAllFrames: FramePathBy = {
+      val raw = d.findElementsByXPath("//*[local-name()='frame' or local-name()='iframe']").toIndexedSeq.zipWithIndex
+      raw map { case (elem, index) => elem }
+    }
+
+    def inAllFramesDoit(window: Window, framePath: Vector[FrameBy], frame: Option[FrameBy]): Stream[T] = {
+      val fullPath = framePath ++ frame.toIndexedSeq
+      switchToFrameBy(window, fullPath)
+      val result = address(AddressBy(window, fullPath))
+      log.debug("###############==========-----> [%s]: %s".format(fullPath.mkString(", "), result))
+      val childrenResultList = findAllFrames.toStream flatMap { f =>
+        inAllFramesDoit(window, fullPath, Some(f))
+      }
+
+      childrenResultList :+ result
+    }
+
+    inAllFramesDoit(window, Vector(), None)
+  }
 
   protected def toBrowserPage(page: SePage): BrowserPage = {
     new BrowserPage(page.name, toElementSelectorList(page.selectorList))

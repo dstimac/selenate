@@ -20,7 +20,7 @@ class FindAndClickAction(val d: FirefoxDriver)
 
   def act = { arg =>
     val elementList: Stream[Boolean] =
-      inAllWindows { address =>
+      inAllWindowsByBy{ address =>
         tryb {
           findElement(arg.method, arg.query).click
         }

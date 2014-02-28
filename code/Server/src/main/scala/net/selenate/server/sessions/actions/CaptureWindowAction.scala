@@ -18,7 +18,7 @@ class CaptureWindowAction(val d: FirefoxDriver)
   protected val log = Log(classOf[CaptureWindowAction])
 
   def act = { arg =>
-    val resScreenshotList: Stream[Option[SeResCaptureWindow]] = inAllWindows { address =>
+    val resScreenshotList: Stream[Option[SeResCaptureWindow]] = inAllWindowsByBy{ address =>
       tryo {
         val webElement   = findElement(arg.method, arg.query)
         val baScreenshot = getScreenshot()

@@ -20,7 +20,7 @@ class AddCookieAction(val d: FirefoxDriver)
 
   def act = { arg =>
     val cookie = arg.cookie
-    inAllWindows { address =>
+    inAllWindowsByBy{ address =>
       // convert from selenate cookie to selenium cookie
       val c = new Cookie(
             cookie.getName

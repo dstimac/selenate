@@ -19,7 +19,7 @@ class FindElementListAction(val d: FirefoxDriver)
   protected val log = Log(classOf[FindElementListAction])
 
   def act = { arg =>
-    val resElementList = inAllWindows { address =>
+    val resElementList = inAllWindowsByBy{ address =>
       val webElementList = findElementList(arg.method, arg.query)
       webElementList map parseWebElement(address)
     }
