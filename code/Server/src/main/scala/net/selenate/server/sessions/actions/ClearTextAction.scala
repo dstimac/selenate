@@ -18,10 +18,25 @@ class ClearTextAction(val d: FirefoxDriver)
   protected val log = Log(classOf[ClearTextAction])
 
   def act = { arg =>
-    switchToFrame(arg.windowHandle, arg.framePath.map(_.toInt).toIndexedSeq)
-    val e = findElement(arg.method, arg.query)
-    e.clear
 
-    new SeResClearText()
+    val elementList: Stream[Boolean] =
+      inAllWindowsByBy{ address =>
+        tryb {
+          findElement(arg.method, arg.query).clear
+        }
+      }
+
+    val isTextClear = elementList.contains(true)
+    if (isTextClear) {
+      new SeResClearText()
+    } else {
+      throw new IllegalArgumentException("Element [%s, %s] was not found in any frame!".format(arg.method.toString, arg.query))
+    }
+
+//    switchToFrame(arg.windowHandle, arg.framePath.map(_.toInt).toIndexedSeq)
+//    val e = findElement(arg.method, arg.query)
+//    e.clear
+//
+//    new SeResClearText()
   }
 }

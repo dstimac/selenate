@@ -19,10 +19,23 @@ class AppendTextAction(val d: FirefoxDriver)
   protected val log = Log(classOf[AppendTextAction])
 
   def act = { arg =>
-    switchToFrame(arg.windowHandle, arg.framePath.map(_.toInt).toIndexedSeq)
-    val e = findElement(arg.method, arg.query)
-    e.sendKeys(arg.text)
+    val elementList: Stream[Boolean] =
+      inAllWindowsByBy{ address =>
+        tryb {
+          findElement(arg.method, arg.query).sendKeys(arg.text)
+        }
+      }
 
-    new SeResAppendText()
+    val isTextAppended = elementList.contains(true)
+    if (isTextAppended) {
+      new SeResAppendText()
+    } else {
+      throw new IllegalArgumentException("Element [%s, %s] was not found in any frame!".format(arg.method.toString, arg.query))
+    }
+//    switchToFrame(arg.windowHandle, arg.framePath.map(_.toInt).toIndexedSeq)
+//    val e = findElement(arg.method, arg.query)
+//    e.sendKeys(arg.text)
+//
+//    new SeResAppendText()
   }
 }

@@ -19,11 +19,26 @@ class SelectOptionAction(val d: FirefoxDriver)
   protected val log = Log(classOf[SelectOptionAction])
 
   def act = { arg =>
-    switchToFrame(arg.windowHandle, arg.framePath.map(_.toInt).toIndexedSeq)
-    val e = findElement(arg.parentMethod, arg.parentQuery)
-    val s = new Select(e)
-    selectOption(s, arg.optionMethod, arg.optionQuery)
+    val elementList: Stream[Boolean] =
+      inAllWindowsByBy{ address =>
+        tryb {
+          val e = findElement(arg.parentMethod, arg.parentQuery)
+          val s = new Select(e)
+          selectOption(s, arg.optionMethod, arg.optionQuery)
+        }
+      }
 
-    new SeResSelectOption()
+    val isElementSelected = elementList.contains(true)
+    if (isElementSelected) {
+      new SeResSelectOption()
+    } else {
+      throw new IllegalArgumentException("Element [%s, %s] was not found in any frame!".format(arg.parentMethod.toString, arg.parentQuery))
+    }
+//    switchToFrame(arg.windowHandle, arg.framePath.map(_.toInt).toIndexedSeq)
+//    val e = findElement(arg.parentMethod, arg.parentQuery)
+//    val s = new Select(e)
+//    selectOption(s, arg.optionMethod, arg.optionQuery)
+//
+//    new SeResSelectOption()
   }
 }
