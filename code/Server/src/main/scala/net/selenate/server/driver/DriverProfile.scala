@@ -48,6 +48,10 @@ object DriverProfile {
 
   private def getFFP(prefMap: Map[String, AnyRef]) = {
     val ffp = new FirefoxProfile
+
+    // Allow access to frames
+//    ffp.setPreference("capability.policy.default.Window.QueryInterface", "allAccess");
+//    ffp.setPreference("capability.policy.default.Window.frameElement.get","allAccess");
     prefMap foreach addPref(ffp)
     ffp
   }

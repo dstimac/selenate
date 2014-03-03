@@ -13,6 +13,7 @@ import org.openqa.selenium.SearchContext
 import org.openqa.selenium.{ By, WebElement }
 import org.openqa.selenium.support.ui.Select
 import scala.collection.JavaConversions._
+import net.selenate.common.util.Util
 import net.selenate.common.user.BrowserPage
 import net.selenate.common.user.ElementSelector
 import net.selenate.common.user.ElementSelectMethod
@@ -20,7 +21,7 @@ import net.selenate.common.user.ElementSelectMethod
 trait ActionCommons {
   type Window      = String
   type Frame       = Int
-  type FrameBy     = WebElement
+  type FrameBy     = By
   type FramePath   = IndexedSeq[Frame]
   type FramePathBy = IndexedSeq[FrameBy]
 
@@ -78,8 +79,9 @@ return report;
   protected def switchToFrameBy(window: Window, framePath: FramePathBy) {
     switchToWindow(window)
     framePath foreach { e =>
-      log.debug("SWITCHING TO FRAME "+ "(%s, %s)".format(e.getTagName(), e.getAttribute("id")))
-      d.switchTo.frame(e)
+      log.debug("SWITCHING TO FRAME "+ "(%s)".format(e.toString()))
+      val elem = d.findElement(e)
+      d.switchTo.frame(elem)
     }
   }
 
@@ -286,10 +288,26 @@ return report;
   }
 
 
+  protected def getUniqueElementXpath(element: WebElement): String = {
+    val attributeReport = d.executeScript(JS.getAttributes, element)
+    val attributes      = parseAttributeReport(attributeReport)
+
+    val classes = attributes.get("class")
+    val id      = attributes.get("id")
+    val name    = attributes.get("name")
+    val src     = attributes.get("src")
+
+    val attrXpath = (src.map("@src='%s'".format(_)) ++ classes.map("@class='%s'".format(_)) ++ id.map("@id='%s'".format(_)) ++ name.map("@name='%s'".format(_))).toList
+    Util.listToString(attrXpath, "//*[", " or ", "]")
+  }
+
   protected def inAllFramesByBy[T](address: AddressBy => T)(window: Window): Stream[T] = {
     def findAllFrames: FramePathBy = {
-      val raw = d.findElementsByXPath("//*[local-name()='frame' or local-name()='iframe']").toIndexedSeq.zipWithIndex
-      raw map { case (elem, index) => elem }
+
+      val raw = findElementList(SeElementSelectMethod.XPATH, "//*[local-name()='frame' or local-name()='iframe']").toIndexedSeq.zipWithIndex
+//      val raw = d.findElementsByXPath("//*[local-name()='frame' or local-name()='iframe']").toIndexedSeq.zipWithIndex
+
+      raw map { case (elem, index) => By.xpath(getUniqueElementXpath(elem)) }
     }
 
     def inAllFramesDoit(window: Window, framePath: Vector[FrameBy], frame: Option[FrameBy]): Stream[T] = {
