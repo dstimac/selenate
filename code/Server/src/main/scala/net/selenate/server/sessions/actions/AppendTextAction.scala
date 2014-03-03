@@ -7,7 +7,6 @@ import common.comms.res._
 import common.comms.req._
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.{ By, WebElement }
-import org.openqa.selenium.internal.selenesedriver.SendKeys
 
 import scala.collection.JavaConversions._
 
