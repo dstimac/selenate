@@ -5,12 +5,11 @@ package actions
 
 import common.comms.res._
 import common.comms.req._
-import org.openqa.selenium.firefox.FirefoxDriver
-import org.openqa.selenium.{ By, WebElement }
+import org.openqa.selenium.remote.RemoteWebDriver
 import scala.collection.JavaConversions._
 import org.openqa.selenium.Keys
 
-class InputTextAction(val d: FirefoxDriver)(implicit context: ActionContext)
+class InputTextAction(val d: RemoteWebDriver)(implicit context: ActionContext)
     extends IAction[SeReqInputText, SeResInputText]
     with ActionCommons {
 

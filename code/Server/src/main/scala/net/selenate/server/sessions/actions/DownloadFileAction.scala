@@ -3,6 +3,7 @@ package server
 package sessions
 package actions
 
+import com.instantor.selenium.InstantorWebDriver
 import common.comms.res._
 import common.comms.req._
 import java.util.ArrayList
@@ -12,7 +13,7 @@ import scala.collection.JavaConverters._
 import java.nio.file.FileSystems
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.Path
-import java.io.File
+import java.io.{FileNotFoundException, File}
 import scala.concurrent._
 import scala.concurrent.duration._
 import java.nio.file.WatchService
@@ -26,7 +27,8 @@ class DownloadFileAction(val d: RemoteWebDriver, sessionID: String)(implicit con
 
   protected val log = Log(classOf[DownloadFileAction])
 
-  def act = { arg =>
+
+  private def downloadOld(arg: SeReqDownloadFile): SeResDownloadFile = {
     log.info("Invoked DownloadFileAction for %s".format(arg.toString()))
 
     val watchService = FileSystems.getDefault().newWatchService()
@@ -39,8 +41,8 @@ class DownloadFileAction(val d: RemoteWebDriver, sessionID: String)(implicit con
     path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY)
     log.info("Registered watch service on %s".format(dir.toString()))
 
-//    val findelementreq = new SeReqFindElement(arg.method, arg.query)
-//    val metadata = new FindElementAction(d).act(findelementreq).element
+    //    val findelementreq = new SeReqFindElement(arg.method, arg.query)
+    //    val metadata = new FindElementAction(d).act(findelementreq).element
 
     log.info("Before click...")
     new ClickAction(d).act(new SeReqClick(arg.windowHandle, arg.framePath, arg.method, arg.query))
@@ -55,6 +57,33 @@ class DownloadFileAction(val d: RemoteWebDriver, sessionID: String)(implicit con
         throw new IllegalArgumentException(e)
     } finally {
       watchService.close()
+    }
+  }
+
+  implicit class ScalaFn2JavaFn[A, R](f: A => R) {
+    def asJava = new java.util.function.Function[A, R] {
+        override def apply(a: A) = f(a)
+    }
+  }
+
+  def act = { arg =>
+    d match {
+      case id: InstantorWebDriver =>
+
+        val f : RemoteWebDriver => java.lang.Boolean = { idd =>
+          idd.findElement(null)
+          true
+        }
+
+        val dfOpt = id.downloadFile(f.asJava)
+
+        if(dfOpt.isPresent) {
+          val file = dfOpt.get()
+          new SeResDownloadFile(file.content, "")
+        } else {
+          throw new FileNotFoundException("bla")
+        }
+      case _ => downloadOld(arg)
     }
 
   }

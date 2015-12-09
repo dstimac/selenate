@@ -12,5 +12,9 @@ object C {
     val poolSize          = serverConfig[Int]("pool-size")
     val host              = serverConfig[String]("host")
     val defaultProfileOpt = serverConfig.get[String]("default-profile")
+
+    val gridConfig = config.detach("selenium-grid")
+    val gridURL = gridConfig.get[String]("gridUrl")
+    val gridPercentage = gridConfig.get[Int]("gridPercentage")
   }
 }

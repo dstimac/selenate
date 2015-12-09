@@ -2,18 +2,15 @@ package net.selenate
 package server
 package driver
 
-import actors.ActorFactory
-
 import java.util.UUID
 
-
-import org.openqa.selenium.remote.{DesiredCapabilities, RemoteWebDriver}
+import org.openqa.selenium.remote.RemoteWebDriver
 
 import scala.collection.mutable.Queue
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
 
-private[driver] class DriverPoolActor(val profile: DriverProfile, val size: Int) extends IDriverPoolActor {
+private[driver] class DriverPoolActor(val profile: DriverProfile, val size: Int) extends IDriverPoolActor with DriverFactory {
   private case class DriverEntry(uuid: UUID, future: Future[RemoteWebDriver])
 
   private val log = Log(classOf[DriverPoolActor])
@@ -24,7 +21,7 @@ private[driver] class DriverPoolActor(val profile: DriverProfile, val size: Int)
 
   private def enqueueNew(count: Int) {
     for (i <- 1 to count) {
-      enqueueNew
+      enqueueNew()
     }
   }
 
@@ -33,7 +30,9 @@ private[driver] class DriverPoolActor(val profile: DriverProfile, val size: Int)
 
     val driverFuture = Future {
       log.info("Driver pool actor starting a new entry: {%s}." format uuid)
-      val driver = new RemoteWebDriver(new java.net.URL("http://10.5.35.5:4444/wd/hub"), DesiredCapabilities.firefox())//(profile.get)
+
+      val options = DriverOptions(Map.empty, C.Server.gridURL, C.Server.gridPercentage)
+      val driver = createDriver(options)
       log.info("Driver pool actor entry {%s} started." format uuid)
       driver
     }
@@ -42,7 +41,7 @@ private[driver] class DriverPoolActor(val profile: DriverProfile, val size: Int)
   }
 
   def get: RemoteWebDriver = {
-    enqueueNew
+    enqueueNew()
     val driverEntry = pool.dequeue
     log.info("Driver pool actor waiting for entry {%s}" format driverEntry.uuid)
     val driver = Await.result(driverEntry.future, 30 seconds)
