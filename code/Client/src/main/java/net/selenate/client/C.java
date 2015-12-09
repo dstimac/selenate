@@ -1,21 +1,23 @@
 package net.selenate.client;
 
-import java.util.Properties;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Properties;
 
 public final class C {
-  private C() {}
+  public final String ServerHost;
+  public final String ClientHost;
+  public final String ServerPort;
+  public final String ServerPath;
 
-  public  static final String branch     = getBranch();
-  private static final String configPath = System.getProperty("user.home") + "/.config/selenate/" + branch + "/client.config";
-  public static final String ServerHost;
-  public static final String ClientHost;
-  public static final String ServerPort;
-  public static final String ServerPath;
+  // === CONSTRUCTORS ===
 
-  static {
+  /**
+   * CREATES CONFIGURATION FROM DEFAULT DISK LOCATION OR SYSTEM PROPERTIES
+   */
+  public C() {
     try {
+      final String configPath = System.getProperty("user.home") + "/.config/selenate/" + System.getProperty("branch") + "/client.config";
       final Properties config = new Properties();
       final Properties props  = System.getProperties();
 
@@ -26,7 +28,7 @@ public final class C {
         } finally {
           pis.close();
         }
-      } catch (Exception e) {
+      } catch (final Exception e) {
         throw new IOException(String.format("An error occured while trying to read the config file at [%s]!", configPath), e);
       }
 
@@ -40,14 +42,41 @@ public final class C {
       final String propsServerPort  = props.getProperty("server.port");
       final String propsServerPath  = props.getProperty("server.path");
 
-      ServerHost = orElse(propsServerHost, configServerHost);
-      ClientHost = orElse(propsClientHost, configClientHost);
-      ServerPort = orElse(propsServerPort, configServerPort);
-      ServerPath = orElse(propsServerPath, configServerPath);
-    } catch (Exception e) {
+      this.ServerHost = orElse(propsServerHost, configServerHost);
+      this.ClientHost = orElse(propsClientHost, configClientHost);
+      this.ServerPort = orElse(propsServerPort, configServerPort);
+      this.ServerPath = orElse(propsServerPath, configServerPath);
+    } catch (final Exception e) {
       throw new RuntimeException("An error occured while loading configuration!", e);
     }
   }
+
+  /**
+   * CREATES CONFIGURATION FROM PROVIDED PROPERTIES
+   * @param properties
+   */
+  public C(final Properties properties) {
+    this.ClientHost = getNonNullProperty(properties, "client.host");
+    this.ServerHost = getNonNullProperty(properties, "server.host");
+    this.ServerPort = getNonNullProperty(properties, "server.port");
+    this.ServerPath = getNonNullProperty(properties, "server.path");
+  }
+
+  /**
+   * CREATES CUSTOM CONFIGURATION
+   * @param clientHost
+   * @param serverHost
+   * @param serverPort
+   * @param serverPath
+   */
+  public C(final String clientHost, final String serverHost, final String serverPort, final String serverPath) {
+    this.ClientHost = clientHost;
+    this.ServerHost = serverHost;
+    this.ServerPort = serverPort;
+    this.ServerPath = serverPath;
+  }
+
+  // ---------------------------------------------------------------------------
 
   private static String getNonNullProperty(final Properties props, final String propName) {
     final String prop = props.getProperty(propName);
@@ -59,15 +88,11 @@ public final class C {
   }
 
   private static String orElse(final String s1, final String s2) {
-    if (s2 == null) {
+    if (s1 != null) return s1;
+    if (s2 != null) {
+      return s2;
+    } else {
       throw new NullPointerException("Second argument to orElse cannot be null!");
     }
-
-    return (s1 == null) ? s2 : s1;
   }
-
-  public static String getBranch() {
-    return System.getProperty("branch");
-  }
-
 }

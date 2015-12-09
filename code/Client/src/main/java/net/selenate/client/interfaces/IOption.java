@@ -1,4 +1,4 @@
-package net.selenate.common.user;
+package net.selenate.client.interfaces;
 
 public interface IOption extends IElement {
 }

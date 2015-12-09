@@ -1,17 +1,40 @@
 package net.selenate.client.user;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import net.selenate.common.comms.*;
-import net.selenate.common.comms.res.SeResCapture;
-import net.selenate.common.user.*;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
-import scala.concurrent.*;
-import scala.concurrent.duration.Duration;
+import net.selenate.client.interfaces.IElement;
+import net.selenate.client.interfaces.IOption;
+import net.selenate.common.comms.SeCookie;
+import net.selenate.common.comms.SeElement;
+import net.selenate.common.comms.SeElementSelectMethod;
+import net.selenate.common.comms.SeElementSelector;
+import net.selenate.common.comms.SeFrame;
+import net.selenate.common.comms.SeOption;
+import net.selenate.common.comms.SeOptionSelectMethod;
+import net.selenate.common.comms.SePage;
+import net.selenate.common.comms.SeSelect;
+import net.selenate.common.comms.SeWindow;
+import net.selenate.common.comms.res.SeResCapture;
+import net.selenate.common.user.BrowserPage;
+import net.selenate.common.user.Capture;
+import net.selenate.common.user.CaptureCookie;
+import net.selenate.common.user.CaptureFrame;
+import net.selenate.common.user.CaptureWindow;
+import net.selenate.common.user.ElementSelectMethod;
+import net.selenate.common.user.ElementSelector;
+import net.selenate.common.user.Location;
+import net.selenate.common.user.OptionSelectMethod;
+import net.selenate.common.user.Position;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public abstract class ActorBase {
   protected Timeout timeout = new Timeout(30, TimeUnit.SECONDS);
@@ -32,16 +55,6 @@ public abstract class ActorBase {
       return result;
     } catch (final Exception e) {
       throw new IOException(String.format("An error occured while sending the message to remote actor!\nMessage: %s", req.toString()), e);
-    }
-  }
-
-
-  public void gracefullStop() throws IOException {
-    try {
-      Future<Boolean> stopped = akka.pattern.Patterns.gracefulStop(session, Duration.create(5, TimeUnit.SECONDS), ActorFactory.system);
-      Await.result(stopped, Duration.create(6, TimeUnit.SECONDS));
-    } catch (Exception e) {
-      throw new IOException("Error while trying to gracefully stop the actor session.", e);
     }
   }
 

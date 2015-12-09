@@ -10,7 +10,7 @@ object Dependencies {
   val jodaTimeConvert = "org.joda"  % "joda-convert" % "1.3.1"
   val jodaTimeTime    = "joda-time" % "joda-time"    % "2.2"
 
-  val seleniumVersion = "2.44.0"
+  val seleniumVersion = "2.48.2"
   val seleniumFirefox = "org.seleniumhq.selenium" % "selenium-firefox-driver" % seleniumVersion
   val seleniumServer  = "org.seleniumhq.selenium" % "selenium-server"         % seleniumVersion
 

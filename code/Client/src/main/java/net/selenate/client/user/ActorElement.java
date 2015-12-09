@@ -1,15 +1,29 @@
 package net.selenate.client.user;
 
+import akka.actor.ActorRef;
+import net.selenate.client.interfaces.IElement;
+import net.selenate.client.interfaces.ISelect;
+import net.selenate.common.comms.SeElementSelectMethod;
+import net.selenate.common.comms.req.SeReqAppendText;
+import net.selenate.common.comms.req.SeReqCaptureElement;
+import net.selenate.common.comms.req.SeReqClearText;
+import net.selenate.common.comms.req.SeReqClick;
+import net.selenate.common.comms.req.SeReqDownloadFile;
+import net.selenate.common.comms.req.SeReqFindSelect;
+import net.selenate.common.comms.req.SeReqInputText;
+import net.selenate.common.comms.res.SeResAppendText;
+import net.selenate.common.comms.res.SeResCaptureElement;
+import net.selenate.common.comms.res.SeResClearText;
+import net.selenate.common.comms.res.SeResClick;
+import net.selenate.common.comms.res.SeResDownloadFile;
+import net.selenate.common.comms.res.SeResFindSelect;
+import net.selenate.common.comms.res.SeResInputText;
+import net.selenate.common.user.Location;
+import net.selenate.common.user.Position;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import akka.actor.ActorRef;
-
-import net.selenate.common.comms.*;
-import net.selenate.common.comms.req.*;
-import net.selenate.common.comms.res.*;
-import net.selenate.common.user.*;
 
 public class ActorElement extends ActorBase implements IElement {
   private final String   uuid;
@@ -156,14 +170,19 @@ public class ActorElement extends ActorBase implements IElement {
   }
 
   @Override
-  public void appendText(String text) throws IOException {
+  public void appendText(final String text) throws IOException {
     typedBlock(new SeReqAppendText(windowHandle, framePath, SeElementSelectMethod.UUID, uuid, text), SeResAppendText.class);
   }
 
   @Override
-  public void setText(String text) throws IOException {
+  public void setText(final String text) throws IOException {
     clearText();
     appendText(text);
+  }
+
+  @Override
+  public void inputText(String text) throws IOException {
+    typedBlock(new SeReqInputText(windowHandle, framePath, SeElementSelectMethod.UUID, uuid, text), SeResInputText.class);
   }
 
   @Override
@@ -181,4 +200,5 @@ public class ActorElement extends ActorBase implements IElement {
     final SeResCaptureElement res = typedBlock(new SeReqCaptureElement(windowHandle, framePath, SeElementSelectMethod.UUID, uuid), SeResCaptureElement.class);
     return res.body;
   }
+
 }

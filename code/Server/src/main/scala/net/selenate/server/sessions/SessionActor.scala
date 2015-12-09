@@ -47,6 +47,7 @@ class SessionActor(sessionID: String, profile: DriverProfile, useFrames: Boolean
     case arg: SeReqFindElementList    => new FindElementListAction(d).act(arg)
     case arg: SeReqFindSelect         => new FindSelectAction(d).act(arg)
     case arg: SeReqGet                => new GetAction(d).act(arg)
+    case arg: SeReqInputText          => new InputTextAction(d).act(arg)
     case arg: SeReqNavigateBack       => new NavigateBackAction(d).act(arg)
     case arg: SeReqNavigateForward    => new NavigateForwardAction(d).act(arg)
     case arg: SeReqNavigateRefresh    => new NavigateRefreshAction(d).act(arg)

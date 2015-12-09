@@ -1,11 +1,13 @@
 package net.selenate.client.user;
 
+import akka.actor.ActorRef;
+import net.selenate.client.interfaces.IElement;
+import net.selenate.client.interfaces.IOption;
+import net.selenate.common.user.Location;
+import net.selenate.common.user.Position;
+
 import java.util.List;
 import java.util.Map;
-
-import akka.actor.ActorRef;
-
-import net.selenate.common.user.*;
 
 public class ActorOption extends ActorElement implements IOption {
   public ActorOption(

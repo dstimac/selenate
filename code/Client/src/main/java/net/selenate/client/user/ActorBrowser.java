@@ -1,21 +1,88 @@
 package net.selenate.client.user;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.util.Timeout;
+import net.selenate.client.interfaces.IBrowser;
+import net.selenate.client.interfaces.IElement;
+import net.selenate.client.interfaces.INavigation;
+import net.selenate.common.comms.SeDownloadMethod;
+import net.selenate.common.comms.SeElementSelectMethod;
+import net.selenate.common.comms.SeElementSelector;
+import net.selenate.common.comms.req.SeCommsReq;
+import net.selenate.common.comms.req.SeReqAddCookie;
+import net.selenate.common.comms.req.SeReqCapture;
+import net.selenate.common.comms.req.SeReqCaptureWindow;
+import net.selenate.common.comms.req.SeReqDeleteCookieNamed;
+import net.selenate.common.comms.req.SeReqDownload;
+import net.selenate.common.comms.req.SeReqElementExists;
+import net.selenate.common.comms.req.SeReqExecuteScript;
+import net.selenate.common.comms.req.SeReqFindAlert;
+import net.selenate.common.comms.req.SeReqFindAndClick;
+import net.selenate.common.comms.req.SeReqFindElement;
+import net.selenate.common.comms.req.SeReqFindElementList;
+import net.selenate.common.comms.req.SeReqGet;
+import net.selenate.common.comms.req.SeReqNavigateBack;
+import net.selenate.common.comms.req.SeReqNavigateForward;
+import net.selenate.common.comms.req.SeReqNavigateRefresh;
+import net.selenate.common.comms.req.SeReqQuit;
+import net.selenate.common.comms.req.SeReqResetFrame;
+import net.selenate.common.comms.req.SeReqSetUseFrames;
+import net.selenate.common.comms.req.SeReqSikuliClick;
+import net.selenate.common.comms.req.SeReqSikuliImageExists;
+import net.selenate.common.comms.req.SeReqSikuliInputText;
+import net.selenate.common.comms.req.SeReqSikuliTakeScreenshot;
+import net.selenate.common.comms.req.SeReqStartKeepalive;
+import net.selenate.common.comms.req.SeReqStopKeepalive;
+import net.selenate.common.comms.req.SeReqSwitchFrame;
+import net.selenate.common.comms.req.SeReqWaitForBrowserPage;
+import net.selenate.common.comms.res.SeResAddCookie;
+import net.selenate.common.comms.res.SeResCapture;
+import net.selenate.common.comms.res.SeResCaptureWindow;
+import net.selenate.common.comms.res.SeResDeleteCookieNamed;
+import net.selenate.common.comms.res.SeResDownload;
+import net.selenate.common.comms.res.SeResElementExists;
+import net.selenate.common.comms.res.SeResExecuteScript;
+import net.selenate.common.comms.res.SeResFindAlert;
+import net.selenate.common.comms.res.SeResFindElement;
+import net.selenate.common.comms.res.SeResFindElementList;
+import net.selenate.common.comms.res.SeResGet;
+import net.selenate.common.comms.res.SeResNavigateBack;
+import net.selenate.common.comms.res.SeResNavigateForward;
+import net.selenate.common.comms.res.SeResNavigateRefresh;
+import net.selenate.common.comms.res.SeResQuit;
+import net.selenate.common.comms.res.SeResResetFrame;
+import net.selenate.common.comms.res.SeResSetUseFrames;
+import net.selenate.common.comms.res.SeResSikuliClick;
+import net.selenate.common.comms.res.SeResSikuliImageExists;
+import net.selenate.common.comms.res.SeResSikuliInputText;
+import net.selenate.common.comms.res.SeResSikuliTakeScreenshot;
+import net.selenate.common.comms.res.SeResStartKeepalive;
+import net.selenate.common.comms.res.SeResStopKeepalive;
+import net.selenate.common.comms.res.SeResSwitchFrame;
+import net.selenate.common.comms.res.SeResWaitForBrowserPage;
+import net.selenate.common.user.BrowserPage;
+import net.selenate.common.user.Capture;
+import net.selenate.common.user.Cookie;
+import net.selenate.common.user.ElementSelectMethod;
+import net.selenate.common.user.ElementSelector;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.duration.Duration;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import net.selenate.common.comms.*;
-import net.selenate.common.comms.req.*;
-import net.selenate.common.comms.res.*;
-import net.selenate.common.user.*;
-import akka.actor.ActorRef;
-import akka.util.Timeout;
+import java.util.concurrent.TimeUnit;
 
 public class ActorBrowser extends ActorBase implements IBrowser {
-  public ActorBrowser(final ActorRef session) {
+  private final ActorSystem system;
+
+  public ActorBrowser(final ActorRef session, final ActorSystem system) {
     super(session);
+    this.system = system;
   }
 
   @Override
@@ -61,12 +128,12 @@ public class ActorBrowser extends ActorBase implements IBrowser {
   }
 
   @Override
-  public void switchFrame(ElementSelectMethod method, String query) throws IOException {
+  public void switchFrame(final ElementSelectMethod method, final String query) throws IOException {
     switchFrame(new ElementSelector(method, query));
   }
 
   @Override
-  public void switchFrame(ElementSelector selector) throws IOException {
+  public void switchFrame(final ElementSelector selector) throws IOException {
     final SeElementSelector reqSelector = userToReqSelector(selector);
     typedBlock(new SeReqSwitchFrame(reqSelector), SeResSwitchFrame.class);
   }
@@ -85,12 +152,12 @@ public class ActorBrowser extends ActorBase implements IBrowser {
   public boolean waitFor(final BrowserPage page) throws IOException {
     final List<BrowserPage> pageList = new ArrayList<BrowserPage>();
     pageList.add(page);
-    String res = waitForAny(pageList);
+    final String res = waitForAny(pageList);
     return (res != null);
   }
 
   @Override
-  public String waitForAny(BrowserPage ... pageList) throws IOException {
+  public String waitForAny(final BrowserPage ... pageList) throws IOException {
     final BrowserPage resPage = waitForAnyPage(Arrays.asList(pageList));
     if(resPage == null) return null;
     return resPage.name;
@@ -106,7 +173,12 @@ public class ActorBrowser extends ActorBase implements IBrowser {
   @Override
   public void quit() throws IOException {
     typedBlock(new SeReqQuit(), SeResQuit.class); // kill browser.
-    gracefullStop(); // Destroy actor session
+    try {
+      final Future<Boolean> stopped = akka.pattern.Patterns.gracefulStop(session, Duration.create(5, TimeUnit.SECONDS), system);
+      Await.result(stopped, Duration.create(6, TimeUnit.SECONDS));
+    } catch (final Exception e) {
+      throw new IOException("Error while trying to gracefully stop the actor session.", e);
+    }
   }
 
   @Override
@@ -164,12 +236,12 @@ public class ActorBrowser extends ActorBase implements IBrowser {
   }
 
   @Override
-  public void deleteCookieNamed(String name) throws IOException {
+  public void deleteCookieNamed(final String name) throws IOException {
     typedBlock(new SeReqDeleteCookieNamed(name), SeResDeleteCookieNamed.class);
   }
 
   @Override
-  public void addCookie(Cookie cookie) throws IOException {
+  public void addCookie(final Cookie cookie) throws IOException {
     typedBlock(new SeReqAddCookie(cookie), SeResAddCookie.class);
   }
 
@@ -179,18 +251,18 @@ public class ActorBrowser extends ActorBase implements IBrowser {
   }
 
   @Override
-  public byte[] download(String url, SeDownloadMethod method, Map<String, String> headers, byte[] body) throws IOException {
+  public byte[] download(final String url, final SeDownloadMethod method, final Map<String, String> headers, final byte[] body) throws IOException {
     final SeResDownload res = typedBlock(new SeReqDownload(url, method, headers, body), SeResDownload.class);
     return res.body;
   }
 
   @Override
-  public void startKeepaliveClick(long delayMillis, ElementSelector selector) throws IOException {
+  public void startKeepaliveClick(final long delayMillis, final ElementSelector selector) throws IOException {
     startKeepaliveClick(delayMillis, selector.method, selector.query);
   }
 
   @Override
-  public void startKeepaliveClick(long delayMillis, ElementSelectMethod method, String query) throws IOException {
+  public void startKeepaliveClick(final long delayMillis, final ElementSelectMethod method, final String query) throws IOException {
     final SeElementSelectMethod reqMethod = userToReqElementSelectMethod(method);
     final List<SeCommsReq> reqList = new ArrayList<SeCommsReq>();
     reqList.add(new SeReqFindAndClick(reqMethod, query));
@@ -199,12 +271,12 @@ public class ActorBrowser extends ActorBase implements IBrowser {
   }
 
   @Override
-  public void startKeepalive(long delayMillis, SeCommsReq... reqList) throws IOException {
+  public void startKeepalive(final long delayMillis, final SeCommsReq... reqList) throws IOException {
     startKeepalive(delayMillis, Arrays.asList(reqList));
   }
 
   @Override
-  public void startKeepalive(long delayMillis, List<SeCommsReq> reqList) throws IOException {
+  public void startKeepalive(final long delayMillis, final List<SeCommsReq> reqList) throws IOException {
     typedBlock(new SeReqStartKeepalive(delayMillis, reqList), SeResStartKeepalive.class);
   }
 
@@ -232,12 +304,12 @@ public class ActorBrowser extends ActorBase implements IBrowser {
   }
 
   @Override
-  public BrowserPage waitForAnyPage(BrowserPage... pageList) throws IOException {
+  public BrowserPage waitForAnyPage(final BrowserPage... pageList) throws IOException {
     return waitForAnyPage(Arrays.asList(pageList));
   }
 
   @Override
-  public BrowserPage waitForAnyPage(List<BrowserPage> pageList) throws IOException {
+  public BrowserPage waitForAnyPage(final List<BrowserPage> pageList) throws IOException {
     final SeResWaitForBrowserPage res = typedBlock(new SeReqWaitForBrowserPage(userToReqPageList(pageList)), SeResWaitForBrowserPage.class);
 
     return res.isSuccessful ? res.foundPage : null;
@@ -258,20 +330,17 @@ public class ActorBrowser extends ActorBase implements IBrowser {
     typedBlock(new SeReqSikuliClick(image, 5000), SeResSikuliClick.class);
   }
   @Override
-  public byte[] sikuliTakeScreenshot(byte[] image, int width, int height) throws IOException {
+  public byte[] sikuliTakeScreenshot(final byte[] image, final int width, final int height) throws IOException {
     final SeResSikuliTakeScreenshot res = typedBlock(new SeReqSikuliTakeScreenshot(image, width, height), SeResSikuliTakeScreenshot.class);
     return res.getImage();
   }
   @Override
-  public void sikuliInputText(byte[] image, String text) throws IOException {
+  public void sikuliInputText(final byte[] image, final String text) throws IOException {
     typedBlock(new SeReqSikuliInputText(image, text), SeResSikuliInputText.class);
   }
 
-  public void setTimeout(Timeout timeout){
-    this.timeout = timeout;
-  }
-
-  public Timeout getTimeout(){
-    return timeout;
+  @Override
+  public void setTimeout(final int seconds){
+    this.timeout = new Timeout(seconds, TimeUnit.SECONDS);
   }
 }

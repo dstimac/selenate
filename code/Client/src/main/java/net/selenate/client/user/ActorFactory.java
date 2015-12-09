@@ -1,47 +1,65 @@
 package net.selenate.client.user;
 
-import java.io.IOException;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import akka.actor.Actor;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.actor.TypedActor;
+import akka.actor.TypedProps;
 
-import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 
-import scala.concurrent.Await;
-import scala.concurrent.Future;
 import net.selenate.client.C;
 import net.selenate.common.sessions.ISessionFactory;
 import net.selenate.common.user.Preferences;
-import akka.actor.*;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.IOException;
+import java.util.Properties;
+
+/**
+ * TODO: sessionFactory creation with custom configuration
+ */
 public final class ActorFactory {
-  private ActorFactory() {}
+  private final C cfg;
 
-  private static final Config config     = loadConfig();
-  public static final ActorSystem system = ActorSystem.create("client-system", config);
-  public static ISessionFactory sessionFactory = getTyped(ISessionFactory.class);
+  private final ActorSystem system;
+  private final ISessionFactory sessionFactory;
 
-  public static <T> T getTyped(Class<T> clazz) {
-    final String serverURI = String.format("akka://server-system@%s:%s/%s", C.ServerHost, C.ServerPort, C.ServerPath);
-    return TypedActor.get(system).typedActorOf(
-        new TypedProps<T>(clazz),
-        system.actorFor(serverURI)
+  // === CONSTRUCTORS ===
+
+  public ActorFactory() {
+    this("client-system", new C());
+  }
+
+  public ActorFactory(final Properties props) {
+    this("client-system", new C(props));
+  }
+
+  public ActorFactory(final String systemName, final C c) {
+    this.cfg = c;
+
+    system = ActorSystem.create(
+      systemName,
+      ConfigFactory.load().withValue(
+        "akka.remote.netty.hostname",
+        ConfigValueFactory.fromAnyRef(cfg.ClientHost)
+      )
+    );
+
+    sessionFactory = TypedActor.get(system).typedActorOf(
+      new TypedProps<ISessionFactory>(ISessionFactory.class),
+      system.actorFor(String.format("akka://server-system@%s:%s/%s", cfg.ServerHost, cfg.ServerPort, cfg.ServerPath))
     );
   }
 
-  public static Config loadConfig() {
-    Config config        = ConfigFactory.load();
-    ConfigValue hostname = ConfigValueFactory.fromAnyRef(C.ClientHost);
-    return config.withValue("akka.remote.netty.hostname", hostname);
-  }
+  // === SESSION CREATION ===
 
-  public static ActorRef getUntyped(String name, Class<? extends Actor> clazz) {
-    return system.actorOf(new Props(clazz), name);
-  }
-
-  public static ActorRef getSession(String name, int timeout) throws IOException {
+  public ActorRef createSession(final String name, final int timeout) throws IOException {
     try {
       final Future<ActorRef> sessionFuture = sessionFactory.getSession(name);
       final ActorRef result = Await.result(sessionFuture, Duration.create(timeout, SECONDS));
@@ -51,7 +69,7 @@ public final class ActorFactory {
     }
   }
 
-  public static ActorRef getSession(String name, Preferences preferences, int timeout) throws IOException {
+  public ActorRef createSession(final String name, final Preferences preferences, final int timeout) throws IOException {
     try {
       final Future<ActorRef> sessionFuture = sessionFactory.getSession(name, preferences);
       final ActorRef result = Await.result(sessionFuture, Duration.create(timeout, SECONDS));
@@ -61,7 +79,22 @@ public final class ActorFactory {
     }
   }
 
-  public static void shutdown() {
+  // ---------------------------------------------------------------------------
+
+  public ActorSystem getSystem() {
+    return system;
+  }
+
+  /**
+   * USE: getSystem().shutdown();
+   */
+  @Deprecated
+  public void shutdown() {
     system.shutdown();
+  }
+
+  @Deprecated
+  public ActorRef getUntyped(final String name, final Class<? extends Actor> clazz) {
+    return system.actorOf(new Props(clazz), name);
   }
 }

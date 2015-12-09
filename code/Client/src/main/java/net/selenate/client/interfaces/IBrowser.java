@@ -1,13 +1,16 @@
-package net.selenate.common.user;
+package net.selenate.client.interfaces;
+
+import net.selenate.common.comms.SeDownloadMethod;
+import net.selenate.common.comms.req.SeCommsReq;
+import net.selenate.common.user.BrowserPage;
+import net.selenate.common.user.Capture;
+import net.selenate.common.user.Cookie;
+import net.selenate.common.user.ElementSelectMethod;
+import net.selenate.common.user.ElementSelector;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import akka.util.Timeout;
-import net.selenate.common.comms.SeDownloadMethod;
-import net.selenate.common.comms.req.SeCommsReq;
-import net.selenate.common.comms.res.SeResDownloadFile;
 
 public interface IBrowser {
   public void open(String url) throws IOException;
@@ -62,6 +65,5 @@ public interface IBrowser {
   public byte[] sikuliTakeScreenshot(final byte[] image, final int width, final int height) throws IOException;
   public void sikuliInputText(final byte[] image, final String text) throws IOException;
 
-  public void setTimeout(Timeout timeout);
-  public Timeout getTimeout();
+  public void setTimeout(int seconds);
 }

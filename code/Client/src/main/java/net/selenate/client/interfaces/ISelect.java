@@ -1,4 +1,6 @@
-package net.selenate.common.user;
+package net.selenate.client.interfaces;
+
+import net.selenate.common.user.OptionSelectMethod;
 
 import java.io.IOException;
 import java.util.List;

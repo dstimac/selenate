@@ -45,6 +45,34 @@
                    NC:editable="true">
     <NC:handlerProp RDF:resource="urn:mimetype:handler:application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
   </RDF:Description>
+  <RDF:Description RDF:about="urn:mimetype:handler:application/vnd.ms-excel"
+                   NC:alwaysAsk="false"
+                   NC:saveToDisk="true">
+    <NC:externalApplication RDF:resource="urn:mimetype:externalApplication:application/vnd.ms-excel"/>
+  </RDF:Description>
+  <RDF:Description RDF:about="urn:mimetype:application/vnd.ms-excel"
+                   NC:value="application/vnd.ms-excel"
+                   NC:editable="true"
+                   NC:description="Microsoft Excel Worksheet">
+    <NC:fileExtensions>xls</NC:fileExtensions>
+    <NC:fileExtensions>xlb</NC:fileExtensions>
+    <NC:fileExtensions>xlt</NC:fileExtensions>
+    <NC:handlerProp RDF:resource="urn:mimetype:handler:application/vnd.ms-excel"/>
+  </RDF:Description>
+  <RDF:Description RDF:about="urn:mimetype:handler:application/xml"
+                   NC:alwaysAsk="false"
+                   NC:saveToDisk="true">
+    <NC:externalApplication RDF:resource="urn:mimetype:externalApplication:application/xml"/>
+  </RDF:Description>
+  <RDF:Description RDF:about="urn:mimetype:application/xml"
+                   NC:value="application/xml"
+                   NC:editable="true"
+                   NC:description="XML document">
+    <NC:fileExtensions>xls</NC:fileExtensions>
+    <NC:fileExtensions>xlb</NC:fileExtensions>
+    <NC:fileExtensions>xlt</NC:fileExtensions>
+    <NC:handlerProp RDF:resource="urn:mimetype:handler:application/xml"/>
+  </RDF:Description>
   <RDF:Description RDF:about="urn:root"
                    NC:en-US_defaultHandlersVersion="4"
                    NC:en-GB_defaultHandlersVersion="3" />
@@ -300,6 +328,8 @@
     <RDF:li RDF:resource="urn:mimetype:application/x-download"/>
     <RDF:li RDF:resource="urn:mimetype:text/csv"/>
     <RDF:li RDF:resource="urn:mimetype:text/html"/>
+    <RDF:li RDF:resource="urn:mimetype:application/vnd.ms-excel"/>
+    <RDF:li RDF:resource="urn:mimetype:application/xml"/>
   </RDF:Seq>
   <RDF:Description RDF:about="urn:handler:web:https://www.mibbit.com/?url=%s"
                    NC:prettyName="Mibbit"

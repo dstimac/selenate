@@ -1,15 +1,20 @@
 package net.selenate.client.user;
 
+import akka.actor.ActorRef;
+import net.selenate.client.interfaces.IElement;
+import net.selenate.client.interfaces.IOption;
+import net.selenate.client.interfaces.ISelect;
+import net.selenate.common.comms.SeElementSelectMethod;
+import net.selenate.common.comms.SeOptionSelectMethod;
+import net.selenate.common.comms.req.SeReqSelectOption;
+import net.selenate.common.comms.res.SeResSelectOption;
+import net.selenate.common.user.Location;
+import net.selenate.common.user.OptionSelectMethod;
+import net.selenate.common.user.Position;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import akka.actor.ActorRef;
-
-import net.selenate.common.comms.*;
-import net.selenate.common.comms.req.*;
-import net.selenate.common.comms.res.*;
-import net.selenate.common.user.*;
 
 public class ActorSelect extends ActorElement implements ISelect {
 
@@ -58,14 +63,14 @@ public class ActorSelect extends ActorElement implements ISelect {
   }
 
   @Override
-  public void select(OptionSelectMethod method, String query)
+  public void select(final OptionSelectMethod method, final String query)
       throws IOException {
     final SeOptionSelectMethod reqMethod = userToReqOptionSelectMethod(method);
     typedBlock(new SeReqSelectOption(getWindowHandle(), getFramePath(), SeElementSelectMethod.UUID, getUuid(), reqMethod, query), SeResSelectOption.class);
   }
 
   @Override
-  public void selectByIndex(int index) throws IOException {
+  public void selectByIndex(final int index) throws IOException {
     select(OptionSelectMethod.INDEX, Integer.toString(index));
   }
 

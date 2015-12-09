@@ -1,10 +1,12 @@
-package net.selenate.common.user;
+package net.selenate.client.interfaces;
+
+import net.selenate.common.comms.res.SeResDownloadFile;
+import net.selenate.common.user.Location;
+import net.selenate.common.user.Position;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import net.selenate.common.comms.res.SeResDownloadFile;
 
 public interface IElement {
   public String   getUuid();
@@ -25,6 +27,7 @@ public interface IElement {
   public void clearText() throws IOException;
   public void appendText(String text) throws IOException;
   public void setText(String text) throws IOException;
+  public void inputText(String text) throws IOException;
   public void click() throws IOException;
 
   /**
