@@ -3,12 +3,11 @@ package server
 package sessions
 package actions
 
+import akka.actor.TypedProps
 import com.instantor.selenium.InstantorWebDriver
 import common.comms.res._
 import common.comms.req._
-import java.util.ArrayList
 import org.openqa.selenium.remote.RemoteWebDriver
-import org.openqa.selenium.remote.RemoteWebElement
 import scala.collection.JavaConverters._
 import java.nio.file.FileSystems
 import java.nio.file.StandardWatchEventKinds._
@@ -19,7 +18,6 @@ import scala.concurrent.duration._
 import java.nio.file.WatchService
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import java.nio.file.WatchEvent
 
 class DownloadFileAction(val d: RemoteWebDriver, sessionID: String)(implicit context: ActionContext)
     extends IAction[SeReqDownloadFile, SeResDownloadFile]
@@ -29,17 +27,17 @@ class DownloadFileAction(val d: RemoteWebDriver, sessionID: String)(implicit con
 
 
   private def downloadOld(arg: SeReqDownloadFile): SeResDownloadFile = {
-    log.info("Invoked DownloadFileAction for %s".format(arg.toString()))
+    log.info("Invoked DownloadFileAction for %s".format(arg.toString))
 
-    val watchService = FileSystems.getDefault().newWatchService()
+    val watchService = FileSystems.getDefault.newWatchService()
     val ffDownloads = new File("/tmp/ff-downloads")
     if(!ffDownloads.isDirectory) ffDownloads.mkdir
     val dir         = new File("/tmp/ff-downloads/%s".format(sessionID))
-    if (!dir.isDirectory()) dir.mkdir()
-    val path     = dir.toPath()
+    if (!dir.isDirectory) dir.mkdir()
+    val path     = dir.toPath
 
     path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY)
-    log.info("Registered watch service on %s".format(dir.toString()))
+    log.info("Registered watch service on %s".format(dir.toString))
 
     //    val findelementreq = new SeReqFindElement(arg.method, arg.query)
     //    val metadata = new FindElementAction(d).act(findelementreq).element
@@ -71,17 +69,23 @@ class DownloadFileAction(val d: RemoteWebDriver, sessionID: String)(implicit con
       case id: InstantorWebDriver =>
 
         val f : RemoteWebDriver => java.lang.Boolean = { idd =>
-          idd.findElement(null)
-          true
+          tryb {
+            findElement(arg.method, arg.query)
+          } match {
+            case true =>
+              findElement(arg.method, arg.query).click()
+              true
+            case x => x
+          }
         }
 
         val dfOpt = id.downloadFile(f.asJava)
 
         if(dfOpt.isPresent) {
           val file = dfOpt.get()
-          new SeResDownloadFile(file.content, "")
+          new SeResDownloadFile(file.content, FilenameUtils.getExtension(file.name))
         } else {
-          throw new FileNotFoundException("bla")
+          throw new FileNotFoundException("Download file failed.")
         }
       case _ => downloadOld(arg)
     }
@@ -97,7 +101,7 @@ class DownloadFileAction(val d: RemoteWebDriver, sessionID: String)(implicit con
      * There are no part files, file size isn't changed. Seems that download is complete
      */
     if (parentDirFiles.zip(parentDir.toFile.listFiles).forall( f => f._1.length == f._2.length)){
-      dumpFile(parentDir.resolve(filePath).toFile())
+      dumpFile(parentDir.resolve(filePath).toFile)
     } else {
       listenerOverFile(parentDir, parentDir.toFile.listFiles, filePath)
     }

@@ -18,17 +18,24 @@ trait DriverFactory {
     (options.gridURL, options.startInGrid) match {
       case (Some(url), true) =>
         Try {
-              InstantorWebDriverFactory.useHub(url).create()
-            } match {
+//          val fileURL = Thread.currentThread().getContextClassLoader.getResource("@downloadedfileuploader-0.0.3.xpi")
+//          val fileURI = fileURL.toURI
+//          val file = new java.io.File(fileURI)
+
+          InstantorWebDriverFactory.useHub(url).create()
+        } match {
           case Success(d) =>
+            log.info(s"########### Starting new Driver instance in GRID!")
 //            log.info(s"########### Starting new Driver instance[$scrapeId] in GRID!")
             d
           case Failure(t) =>
+            log.error(s"Failed to start new remote driver on grid!", t)
 //            log.error(s"Failed to start new remote driver[$scrapeId] on grid!", t)
 
             new FirefoxDriver(toFirefoxProfile(c))
         }
       case _ =>
+        log.info(s"########### Starting new Driver instance on HOST!")
 //        log.info(s"########### Starting new Driver instance[$scrapeId] on HOST!")
         new FirefoxDriver(toFirefoxProfile(c))
     }
